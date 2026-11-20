@@ -9,6 +9,20 @@ issueRouter.get("/", (_req, res) => {
     return res.json(issues)
 })
 
+issueRouter.get("/:id", (req, res) => {
+    const id = req.params.id
+    const issue = getIssueById(id)
+    if (issue === undefined) {
+        return res.status(404).json({
+            "message": "Issue not found"
+        })
+    }
+    return res.status(200).json({
+        "message": "Issue found",
+        "issue": issue
+    })
+})
+
 issueRouter.post("/", (req, res) => {
     const result = createIssueSchema.safeParse(req.body)
     if (!result.success) {

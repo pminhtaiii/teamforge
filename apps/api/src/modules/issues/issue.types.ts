@@ -12,3 +12,9 @@ export interface CreateIssueInput {
     title: string;
     description?: string;
 }
+
+export interface UpdateIssueInput {
+    title?: string;
+    description?: string | null;
+    status?: IssueStatus;
+}
