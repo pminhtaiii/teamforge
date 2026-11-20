@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { createIssue, getIssueById } from "../../../src/modules/issues/issue.service.js";
+import { createIssue, getIssueById, listIssues } from "../../../src/modules/issues/issue.service.js";
 
 describe("Issue Service", () => {
     describe("createIssue", () => {
@@ -41,6 +41,27 @@ describe("Issue Service", () => {
             })
             const result = getIssueById(issue.id)
             expect(result).toEqual(issue)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("getIssueById", () => {
+        it("should return undefined when ID does not exist", () => {
+            const result = getIssueById("hahaha no ID here")
+            expect(result).toBeUndefined()
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("listIssues", () => {
+        it("should include newly created issues", () => {
+            const issue1 = createIssue({ title: "Fix login bug" })
+            const issue2 = createIssue({ title: "Build dashboard" })
+            const result = listIssues()
+            expect(result).toContainEqual(issue1)
+            expect(result).toContainEqual(issue2)
         })
     })
 })
