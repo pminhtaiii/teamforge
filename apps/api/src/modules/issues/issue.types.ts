@@ -8,4 +8,7 @@ export interface Issue {
     createdAt: Date;
 }
 
-export type CreateIssueInput = Pick<Issue, "title" | "description">
+export interface CreateIssueInput {
+    title: string;
+    description?: string;
+}
