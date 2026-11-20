@@ -1,5 +1,5 @@
-import { describe, it, expect } from "vitest"
-import { createIssue, getIssueById, listIssues } from "../../../src/modules/issues/issue.service.js";
+import { beforeEach, describe, it, expect } from "vitest"
+import { createIssue, getIssueById, listIssues, clearIssues } from "../../../src/modules/issues/issue.service.js";
 
 describe("Issue Service", () => {
     describe("createIssue", () => {
@@ -62,6 +62,19 @@ describe("Issue Service", () => {
             const result = listIssues()
             expect(result).toContainEqual(issue1)
             expect(result).toContainEqual(issue2)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    beforeEach(() => {
+        clearIssues()
+    })
+    
+    describe("listIssues", () => {
+        it("should return an empty array when no issues exist", () => {
+            const result = listIssues()
+            expect(result).toEqual([])
         })
     })
 })

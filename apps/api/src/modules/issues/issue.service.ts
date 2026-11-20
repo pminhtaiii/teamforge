@@ -22,3 +22,7 @@ export function getIssueById(id: string): Issue | undefined {
 export function listIssues(): Issue[] {
     return [...issues.values()]
 }
+
+export function clearIssues(): void {
+    issues.clear()
+}
