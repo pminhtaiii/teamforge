@@ -1,5 +1,11 @@
 node_modules/
 dist/
-**/.env
-**/.env.*
-!**/.env.example
+coverage/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
