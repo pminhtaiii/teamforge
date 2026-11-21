@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect } from "vitest"
-import { createIssue, getIssueById, listIssues, clearIssues } from "../../../src/modules/issues/issue.service.js";
+import { createIssue, getIssueById, listIssues, clearIssues, updateIssue } from "../../../src/modules/issues/issue.service.js";
 
 describe("Issue Service", () => {
     describe("createIssue", () => {
@@ -70,11 +70,42 @@ describe("Issue Service", () => {
     beforeEach(() => {
         clearIssues()
     })
-    
+
     describe("listIssues", () => {
         it("should return an empty array when no issues exist", () => {
             const result = listIssues()
             expect(result).toEqual([])
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    beforeEach(() => {
+        clearIssues()
+    })
+
+    describe("listIssues", () => {
+        it("should return exactly 2 issues", () => {
+            const issue1 = createIssue({ title: "Fix login bug" });
+            const issue2 = createIssue({ title: "Build dashboard" });
+            const result = listIssues()
+            expect(result).toHaveLength(2)
+            expect(result).toContainEqual(issue1)
+            expect(result).toContainEqual(issue2)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("updateIssue", () => {
+        it("should update issue status", () => {
+            const issue = createIssue({
+                title: "Fix login bug"
+            });
+            const result =  updateIssue(issue.id, { status: "in_progress" })
+            expect(result?.status).toBe("in_progress")
+            expect(result?.title).toBe("Fix login bug")
+            expect(result?.id).toBe(issue.id)
         })
     })
 })

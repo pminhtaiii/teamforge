@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Issue, CreateIssueInput } from "./issue.types.js";
+import type { Issue, CreateIssueInput, UpdateIssueInput } from "./issue.types.js";
 
 const issues = new Map<string, Issue>()
 
@@ -21,6 +21,23 @@ export function getIssueById(id: string): Issue | undefined {
 
 export function listIssues(): Issue[] {
     return [...issues.values()]
+}
+
+export function updateIssue(id: string, input: UpdateIssueInput): Issue | undefined {
+    const issue = getIssueById(id)
+    if (!issue) {
+        return undefined
+    }
+    if (input.title !== undefined) {
+        issue.title = input.title
+    }
+    if (input.description !== undefined) {
+        issue.description = input.description
+    }
+    if (input.status !== undefined) {
+        issue.status = input.status
+    }
+    return issue
 }
 
 export function clearIssues(): void {
