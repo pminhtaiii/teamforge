@@ -1,188 +1,180 @@
-import { beforeEach, describe, it, expect } from "vitest"
-import { createIssue, getIssueById, listIssues, clearIssues, updateIssue, deleteIssue } from "../../../src/modules/issues/issue.service.js";
+
+import { beforeEach, describe, it, expect } from "vitest";
+import {
+    createIssue,
+    getIssueById,
+    listIssues,
+    clearIssues,
+    updateIssue,
+    deleteIssue
+} from "../../../src/modules/issues/issue.service.js";
 
 describe("Issue Service", () => {
-    describe("createIssue", () => {
-        it("should create an issue with default types", () => {
-            const issue = createIssue({
-                "title": "Fix login bug"
-            })
-            expect(issue.title).toBe("Fix login bug")
-            expect(issue.description).toBeNull()
-            expect(issue.status).toBe("todo")
-            expect(issue.createdAt).toBeInstanceOf(Date)
-            expect(issue.id).toEqual(expect.any(String))
-        })
-    })
-})
+    beforeEach(() => {
+        clearIssues();
+    });
 
-describe("Issue Service", () => {
+    // CREATE ISSUE
     describe("createIssue", () => {
-        it("should create a issue with a description", () => {
-            const description =  "Bug found in the authentication system"
+        it("should create an issue with default values", () => {
             const issue = createIssue({
-                "title": "Fix login bug",
+                title: "Fix login bug"
+            });
+
+            expect(issue.title).toBe("Fix login bug");
+            expect(issue.description).toBeNull();
+            expect(issue.status).toBe("todo");
+            expect(issue.createdAt).toBeInstanceOf(Date);
+            expect(issue.id).toEqual(expect.any(String));
+        });
+
+        it("should create an issue with a description", () => {
+            const description = "Bug found in the authentication system";
+
+            const issue = createIssue({
+                title: "Fix login bug",
                 description
-            })
-            expect(issue.title).toBe("Fix login bug")
-            expect(issue.description).toBe(description)
-            expect(issue.status).toBe("todo")
-            expect(issue.createdAt).toBeInstanceOf(Date)
-            expect(issue.id).toEqual(expect.any(String))
-        })
-    })
-})
+            });
 
-describe("Issue Service", () => {
+            expect(issue.title).toBe("Fix login bug");
+            expect(issue.description).toBe(description);
+            expect(issue.status).toBe("todo");
+            expect(issue.createdAt).toBeInstanceOf(Date);
+            expect(issue.id).toEqual(expect.any(String));
+        });
+    });
+
+    // GET ISSUE BY ID
     describe("getIssueById", () => {
         it("should return an issue when ID exists", () => {
             const issue = createIssue({
-                "title": "Implement authentication"
-            })
-            const result = getIssueById(issue.id)
-            expect(result).toEqual(issue)
-        })
-    })
-})
+                title: "Implement authentication"
+            });
 
-describe("Issue Service", () => {
-    describe("getIssueById", () => {
+            const result = getIssueById(issue.id);
+
+            expect(result).toEqual(issue);
+        });
+
         it("should return undefined when ID does not exist", () => {
-            const result = getIssueById("hahaha no ID here")
-            expect(result).toBeUndefined()
-        })
-    })
-})
+            const result = getIssueById("hahaha no ID here");
 
-describe("Issue Service", () => {
+            expect(result).toBeUndefined();
+        });
+    });
+
+    // LIST ISSUES
     describe("listIssues", () => {
         it("should include newly created issues", () => {
-            const issue1 = createIssue({ title: "Fix login bug" })
-            const issue2 = createIssue({ title: "Build dashboard" })
-            const result = listIssues()
-            expect(result).toContainEqual(issue1)
-            expect(result).toContainEqual(issue2)
-        })
-    })
-})
+            const issue1 = createIssue({ title: "Fix login bug" });
+            const issue2 = createIssue({ title: "Build dashboard" });
 
-describe("Issue Service", () => {
-    beforeEach(() => {
-        clearIssues()
-    })
+            const result = listIssues();
 
-    describe("listIssues", () => {
+            expect(result).toContainEqual(issue1);
+            expect(result).toContainEqual(issue2);
+        });
+
         it("should return an empty array when no issues exist", () => {
-            const result = listIssues()
-            expect(result).toEqual([])
-        })
-    })
-})
+            const result = listIssues();
 
-describe("Issue Service", () => {
-    beforeEach(() => {
-        clearIssues()
-    })
+            expect(result).toEqual([]);
+        });
 
-    describe("listIssues", () => {
         it("should return exactly 2 issues", () => {
             const issue1 = createIssue({ title: "Fix login bug" });
             const issue2 = createIssue({ title: "Build dashboard" });
-            const result = listIssues()
-            expect(result).toHaveLength(2)
-            expect(result).toContainEqual(issue1)
-            expect(result).toContainEqual(issue2)
-        })
-    })
-})
 
-describe("Issue Service", () => {
+            const result = listIssues();
+
+            expect(result).toHaveLength(2);
+            expect(result).toContainEqual(issue1);
+            expect(result).toContainEqual(issue2);
+        });
+    });
+
+    // UPDATE ISSUE
     describe("updateIssue", () => {
         it("should update issue status", () => {
             const issue = createIssue({
                 title: "Fix login bug"
             });
-            const result =  updateIssue(issue.id, { status: "in_progress" })
-            expect(result?.status).toBe("in_progress")
-            expect(result?.title).toBe("Fix login bug")
-            expect(result?.id).toBe(issue.id)
-        })
-    })
-})
 
-describe("Issue Service", () => {
-    describe("updateIssue", () => {
-        it("should update description when set to null", () => {
+            const result = updateIssue(issue.id, {
+                status: "in_progress"
+            });
+
+            expect(result?.status).toBe("in_progress");
+            expect(result?.title).toBe("Fix login bug");
+            expect(result?.id).toBe(issue.id);
+        });
+
+        it("should clear description when set to null", () => {
             const issue = createIssue({
                 title: "Fix login bug",
                 description: "Login fails"
-            })
-            const result = updateIssue(issue.id, { description: null })
-            expect(result?.description).toBeNull()
-        })
-    })
-})
+            });
 
-describe("Issue Service", () => {
-    describe("updateIssue", () => {
+            const result = updateIssue(issue.id, {
+                description: null
+            });
+
+            expect(result?.description).toBeNull();
+        });
+
         it("should return undefined when issue does not exist", () => {
             const result = updateIssue(
                 "00000000-0000-4000-8000-000000000000",
                 { status: "done" }
             );
-            expect(result).toBeUndefined();
-        })
-    })
-})
 
-describe("Issue Service", () => {
-    describe("updateIssue", () => {
-        it("should preserve createdAt field after updating issues", () => {
+            expect(result).toBeUndefined();
+        });
+
+        it("should preserve createdAt after updating an issue", () => {
             const issue = createIssue({
                 title: "Fix login bug"
-            })
-            const original = issue.createdAt.getTime()
-            const result = updateIssue(issue.id, { status: "done" })
-            expect(result?.createdAt.getTime()).toEqual(original)
-        })
-    })
-})
+            });
 
-describe("Issue Service", () => {
+            const originalTime = issue.createdAt.getTime();
+
+            const result = updateIssue(issue.id, {
+                status: "done"
+            });
+
+            expect(result?.createdAt.getTime()).toBe(originalTime);
+        });
+    });
+
+    // DELETE ISSUE
     describe("deleteIssue", () => {
         it("should return true when issue exists", () => {
             const issue = createIssue({
                 title: "Fix login bug"
-            })
-            const result = deleteIssue(issue.id)
-            expect(result).toBe(true)
-        })
-    })
-})
+            });
 
-describe("Issue Service", () => {
-    describe("deleteIssue", () => {
+            const result = deleteIssue(issue.id);
+
+            expect(result).toBe(true);
+        });
+
         it("should return false when issue does not exist", () => {
-            const result = deleteIssue("999999")
-            expect(result).toBe(false)
-        })
-    })
-})
+            const result = deleteIssue("999999");
 
-describe("Issue Service", () => {
-    describe("deleteIssue", () => {
-        beforeEach(() => {
-            clearIssues()
-        })
+            expect(result).toBe(false);
+        });
 
         it("should remove issue from storage", () => {
             const issue = createIssue({
                 title: "Fix login bug"
-            })
-            const result = deleteIssue(issue.id)
-            const checkResult = getIssueById(issue.id)
-            expect(result).toBe(true)
-            expect(checkResult).toBeUndefined()
-        })
-    })
-})
+            });
+
+            const result = deleteIssue(issue.id);
+            const checkResult = getIssueById(issue.id);
+
+            expect(result).toBe(true);
+            expect(checkResult).toBeUndefined();
+            expect(listIssues()).toHaveLength(0);
+        });
+    });
+});
