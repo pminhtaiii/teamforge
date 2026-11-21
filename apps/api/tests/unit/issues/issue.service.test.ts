@@ -109,3 +109,28 @@ describe("Issue Service", () => {
         })
     })
 })
+
+describe("Issue Service", () => {
+    describe("updateIssue", () => {
+        it("should update description when set to null", () => {
+            const issue = createIssue({
+                title: "Fix login bug",
+                description: "Login fails"
+            })
+            const result = updateIssue(issue.id, { description: null })
+            expect(result?.description).toBeNull()
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("updateIssue", () => {
+        it("should return undefined when issue does not exist", () => {
+            const result = updateIssue(
+                "00000000-0000-4000-8000-000000000000",
+                { status: "done" }
+            );
+            expect(result).toBeUndefined();
+        })
+    })
+})
