@@ -134,3 +134,16 @@ describe("Issue Service", () => {
         })
     })
 })
+
+describe("Issue Service", () => {
+    describe("updateIssue", () => {
+        it("should preserve createdAt field after updating issues", () => {
+            const issue = createIssue({
+                title: "Fix login bug"
+            })
+            const original = issue.createdAt.getTime()
+            const result = updateIssue(issue.id, { status: "done" })
+            expect(result?.createdAt.getTime()).toEqual(original)
+        })
+    })
+})
