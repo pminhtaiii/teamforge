@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { createIssue, listIssues, getIssueById } from "./issue.service.js";
-import { createIssueSchema } from "./issue.schema.js";
+import { createIssue, listIssues, getIssueById, updateIssue } from "./issue.service.js";
+import { createIssueSchema, updateIssueSchema } from "./issue.schema.js";
 
 export const issueRouter = Router()
 
@@ -35,5 +35,27 @@ issueRouter.post("/", (req, res) => {
     return res.status(201).json({
         "message": "Issue created",
         "issue": issue
+    })
+})
+
+issueRouter.patch("/:id", (req, res) => {
+    const id = req.params.id
+    const result = updateIssueSchema.safeParse(req.body)
+    if (!result.success) {
+        return res.status(400).json({
+            "message": "Validation failed",
+            "errors": result.error.issues
+        })
+    }
+    const updatedIssue = updateIssue(id, result.data)
+    if (!updatedIssue) {
+        return res.status(404).json({
+            "message": "Issue not found",
+            "issue": updatedIssue
+        })
+    }
+    return res.status(200).json({
+        "message": "Issue updated",
+        "updated issue": updatedIssue
     })
 })
