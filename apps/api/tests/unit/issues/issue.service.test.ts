@@ -1,5 +1,5 @@
 import { beforeEach, describe, it, expect } from "vitest"
-import { createIssue, getIssueById, listIssues, clearIssues, updateIssue } from "../../../src/modules/issues/issue.service.js";
+import { createIssue, getIssueById, listIssues, clearIssues, updateIssue, deleteIssue } from "../../../src/modules/issues/issue.service.js";
 
 describe("Issue Service", () => {
     describe("createIssue", () => {
@@ -144,6 +144,45 @@ describe("Issue Service", () => {
             const original = issue.createdAt.getTime()
             const result = updateIssue(issue.id, { status: "done" })
             expect(result?.createdAt.getTime()).toEqual(original)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("deleteIssue", () => {
+        it("should return true when issue exists", () => {
+            const issue = createIssue({
+                title: "Fix login bug"
+            })
+            const result = deleteIssue(issue.id)
+            expect(result).toBe(true)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("deleteIssue", () => {
+        it("should return false when issue does not exist", () => {
+            const result = deleteIssue("999999")
+            expect(result).toBe(false)
+        })
+    })
+})
+
+describe("Issue Service", () => {
+    describe("deleteIssue", () => {
+        beforeEach(() => {
+            clearIssues()
+        })
+
+        it("should remove issue from storage", () => {
+            const issue = createIssue({
+                title: "Fix login bug"
+            })
+            const result = deleteIssue(issue.id)
+            const checkResult = getIssueById(issue.id)
+            expect(result).toBe(true)
+            expect(checkResult).toBeUndefined()
         })
     })
 })
