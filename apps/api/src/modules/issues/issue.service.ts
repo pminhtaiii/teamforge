@@ -40,6 +40,15 @@ export function updateIssue(id: string, input: UpdateIssueInput): Issue | undefi
     return issue
 }
 
+export function deleteIssue(id: string): boolean {
+    const issue = getIssueById(id)
+    if (!issue) {
+        return false
+    }
+    issues.delete(id)
+    return true
+}
+
 export function clearIssues(): void {
     issues.clear()
 }

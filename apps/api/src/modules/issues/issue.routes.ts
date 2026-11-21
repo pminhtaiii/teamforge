@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { createIssue, listIssues, getIssueById, updateIssue } from "./issue.service.js";
+import { createIssue, listIssues, getIssueById, updateIssue, deleteIssue } from "./issue.service.js";
 import { createIssueSchema, updateIssueSchema } from "./issue.schema.js";
 
 export const issueRouter = Router()
@@ -56,6 +56,17 @@ issueRouter.patch("/:id", (req, res) => {
     }
     return res.status(200).json({
         "message": "Issue updated",
-        "updated issue": updatedIssue
+        "issue": updatedIssue
     })
+})
+
+issueRouter.delete("/:id", (req, res) => {
+    const id = req.params.id
+    const result = deleteIssue(id)
+    if (!result) {
+        return res.status(404).json({
+            "message": "Issue not found"
+        })
+    }
+    return res.status(204).send()
 })
