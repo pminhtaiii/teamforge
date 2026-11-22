@@ -1,7 +1,6 @@
 import { describe, it, expect, afterAll } from "vitest";
-import { client } from "../../../src/db/client.js";
-import { insertIssue, findIssueById, findAllIssues, updateIssueInDb } from "../../../src/modules/issues/issue.repository.js";
-import { db } from "../../../src/db/client.js";
+import { client, db } from "../../../src/db/client.js";
+import { insertIssue, findIssueById, findAllIssues, updateIssueInDb, deleteIssueFromDb } from "../../../src/modules/issues/issue.repository.js";
 import { issues } from "../../../src/db/schema.js";
 import { eq } from "drizzle-orm";
 
@@ -55,5 +54,26 @@ describe("Issue Repository", () => {
         } finally {
             await db.delete(issues).where(eq(issues.id, issue.id))
         }
+    })
+
+    it("should delete an existing issue", async () => {
+        const issue = await insertIssue({
+            title: "Test deleteIssue"
+        })
+
+        try {
+            const result = await deleteIssueFromDb(issue.id)
+            expect(result).toBe(true)
+            
+            const found = await findIssueById(issue.id)
+            expect(found).toBeUndefined()
+        } finally {
+            await db.delete(issues).where(eq(issues.id, issue.id))
+        }
+    })
+
+    it ("should return false when issue does not exist", async () => {
+        const result = await deleteIssueFromDb("00000000-0000-4000-8000-000000000000")
+        expect(result).toBe(false)
     })
 });

@@ -30,3 +30,8 @@ export async function updateIssueInDb(id: string, input: UpdateIssueInput): Prom
     const result = await db.update(issues).set(input).where(eq(issues.id, id)).returning()
     return result[0]
 }
+
+export async function deleteIssueFromDb(id: string): Promise<boolean> {
+    const result = await db.delete(issues).where(eq(issues.id, id)).returning()
+    return result.length > 0
+}
