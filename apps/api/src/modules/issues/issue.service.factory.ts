@@ -9,7 +9,18 @@ export function createIssueService(repo: IssueRepository) {
         async getIssueById(id: string): Promise<Issue | undefined> {
             const result = await repo.findById(id)
             return result
+        },
+        async createIssue(input: CreateIssueInput): Promise<Issue> {
+            const result = await repo.insert(input)
+            return result
+        },
+        async updateIssue(id: string, input: UpdateIssueInput) : Promise<Issue | undefined> {
+            const result = await repo.update(id, input)
+            return result
+        },
+        async deleteIssue(id: string): Promise<boolean> {
+            const result = await repo.delete(id)
+            return result
         }
-        async createIssue(input: )
     }
 }
