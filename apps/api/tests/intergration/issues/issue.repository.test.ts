@@ -11,6 +11,15 @@ describe("Issue Repository", () => {
     })
 
     it("should insert an issue into PostgreSQL", async () => {
-        
+        const issue = await insertIssue({
+            title: "Test PostgreSQL",
+            description: "Intergration testing"
+        })
+        expect(issue.title).toBe("Test PostgreSQL")
+        expect(issue.description).toBe("Intergration testing")
+        expect(issue.id).toEqual(expect.any(String))
+
+        const found = await findIssueById(issue.id)
+        expect(found).toEqual(issue)
     })
 })
