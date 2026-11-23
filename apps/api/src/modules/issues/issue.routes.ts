@@ -22,7 +22,6 @@ issueRouter.get("/:id", async (req, res) => {
         })
     }
 
-    const id = req.params.id
     const issue = await issueService.getIssueById(parsed.data)
     if (issue === undefined) {
         return res.status(404).json({
@@ -32,15 +31,15 @@ issueRouter.get("/:id", async (req, res) => {
     return res.status(200).json(issue)
 })
 
-issueRouter.post("/", (req, res) => {
-    const result = createIssueSchema.safeParse(req.body)
-    if (!result.success) {
+issueRouter.post("/", async (req, res) => {
+    const parsed = createIssueSchema.safeParse(req.body)
+    if (!parsed.success) {
         return res.status(400).json({
             message: "Validation failed",
-            errors: result.error.issues
+            errors: parsed.error.issues
         })
     }
-    const issue = createIssue(result.data)
+    const issue = createIssue(parsed.data)
     return res.status(201).json({
         message: "Issue created",
         issue: issue
