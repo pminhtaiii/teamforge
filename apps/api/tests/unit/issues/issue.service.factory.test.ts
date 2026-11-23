@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createIssueService } from "../../../src/modules/issues/issue.service.factory.js";
 import type { IssueRepository } from "../../../src/modules/issues/issue.repository.interface.js";
-import type { Issue, CreateIssueInput } from "../../../src/modules/issues/issue.types.js";
+import type { Issue, CreateIssueInput, UpdateIssueInput } from "../../../src/modules/issues/issue.types.js";
 
 const mockRepo: IssueRepository = {
     findAll: vi.fn(async () => []),
@@ -97,6 +97,64 @@ describe("Issue Service Factory", () => {
             await expect(service.createIssue(input)).rejects.toThrow("Database error")
             expect(mockRepo.insert).toHaveBeenCalledOnce()
             expect(mockRepo.insert).toHaveBeenCalledWith(input)
+        })
+    })
+
+    describe("updateIssue", () => {
+        it("should update an existing issue", async () => {
+            const service = createIssueService(mockRepo)
+            const input: UpdateIssueInput = {
+                status: "in_progress"
+            }
+            const issue: Issue = {
+                id: "issue-1",
+                title: "Learning Typescript",
+                description: "Learning Typescript is not that hard tbh",
+                status: "todo",
+                createdAt: new Date()
+            }
+            const updatedIssue: Issue = {
+                ...issue,
+                status: "in_progress"
+            }
+            vi.mocked(mockRepo.update).mockResolvedValueOnce(updatedIssue)
+            const result = await service.updateIssue(issue.id, input)
+            expect(result).toEqual(updatedIssue)
+            expect(result?.status).toBe("in_progress")
+            expect(mockRepo.update).toHaveBeenCalledOnce()
+            expect(mockRepo.update).toHaveBeenCalledWith(issue.id, input)
+        })
+
+        it("should return undefined when issue does not exist", async () => {
+            const service = createIssueService(mockRepo)
+            const input: UpdateIssueInput = {
+                status: "done"
+            }
+            vi.mocked(mockRepo.update).mockResolvedValueOnce(undefined)
+            const result = await service.updateIssue("issue-666", input)
+            expect(result).toBeUndefined()
+            expect(mockRepo.update).toHaveBeenCalledOnce()
+            expect(mockRepo.update).toHaveBeenCalledWith("issue-666", input)
+        })
+    })
+
+    describe("deleteIssue", () => {
+        it("should delete an existing issue", async () => {
+            const service = createIssueService(mockRepo)
+            vi.mocked(mockRepo.delete).mockResolvedValueOnce(true)
+            const result = await service.deleteIssue("issue-1")
+            expect(result).toBe(true)
+            expect(mockRepo.delete).toHaveBeenCalledOnce()
+            expect(mockRepo.delete).toHaveBeenCalledWith("issue-1")
+        })
+
+        it("should return false when issue does not exist", async () => {
+            const service = createIssueService(mockRepo)
+            vi.mocked(mockRepo.delete).mockResolvedValueOnce(false)
+            const result = await service.deleteIssue("issue-666")
+            expect(result).toBe(false)
+            expect(mockRepo.delete).toHaveBeenCalledOnce()
+            expect(mockRepo.delete).toHaveBeenCalledWith("issue-666")
         })
     })
 })
