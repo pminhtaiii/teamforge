@@ -39,38 +39,46 @@ issueRouter.post("/", async (req, res) => {
             errors: parsed.error.issues
         })
     }
-    const issue = createIssue(parsed.data)
+    const issue = await issueService.createIssue(parsed.data)
     return res.status(201).json({
         message: "Issue created",
         issue: issue
     })
 })
 
-issueRouter.patch("/:id", (req, res) => {
-    const id = req.params.id
-    const result = updateIssueSchema.safeParse(req.body)
-    if (!result.success) {
+issueRouter.patch("/:id", async (req, res) => {
+    const parsedId = issueIdSchema.safeParse(req.params.id)
+    const parsedBody = updateIssueSchema.safeParse(req.body)
+    if (!parsedId.success) {
         return res.status(400).json({
             message: "Validation failed",
-            errors: result.error.issues
+            errors: parsedId.error.issues
         })
     }
-    const updatedIssue = updateIssue(id, result.data)
+    if (!parsedBody.success) {
+        return res.status(400).json({
+            message: "Validation failed",
+            errors: parsedBody.error.issues
+        })
+    }
+    const updatedIssue = await issueService.updateIssue(parsedId.data, parsedBody.data)
     if (!updatedIssue) {
         return res.status(404).json({
-            message: "Issue not found",
-            issue: updatedIssue
+            message: "Issue not found"
         })
     }
-    return res.status(200).json({
-        message: "Issue updated",
-        issue: updatedIssue
-    })
+    return res.status(200).json(updatedIssue)
 })
 
-issueRouter.delete("/:id", (req, res) => {
-    const id = req.params.id
-    const result = deleteIssue(id)
+issueRouter.delete("/:id", async (req, res) => {
+    const parsedId = issueIdSchema.safeParse(req.params.id)
+    if (!parsedId.success) {
+        return res.status(400).json({
+            message: "Validation failed",
+            errors: parsedId.error.issues
+        })
+    }
+    const result = await issueService.deleteIssue(parsedId.data)
     if (!result) {
         return res.status(404).json({
             message: "Issue not found"
