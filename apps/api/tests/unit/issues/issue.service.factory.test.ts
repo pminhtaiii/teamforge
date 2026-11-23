@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createIssueService } from "../../../src/modules/issues/issue.service.factory.js";
+import { createIssueService } from "../../../src/modules/issues/issue.service.js";
 import type { IssueRepository } from "../../../src/modules/issues/issue.repository.interface.js";
 import type { Issue, CreateIssueInput, UpdateIssueInput } from "../../../src/modules/issues/issue.types.js";
 
