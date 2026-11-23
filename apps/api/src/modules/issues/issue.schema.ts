@@ -10,3 +10,5 @@ export const updateIssueSchema = z.object({
     description: z.string().nullable().optional(),
     status: z.enum(["todo", "in_progress", "done"]).optional()
 })
+
+export const issueIdSchema = z.string().uuid()
