@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createIssueService } from "../../../src/modules/issues/issue.service.factory.js";
 import type { IssueRepository } from "../../../src/modules/issues/issue.repository.interface.js";
-import type { Issue } from "../../../src/modules/issues/issue.types.js";
+import type { Issue, CreateIssueInput } from "../../../src/modules/issues/issue.types.js";
 
 const mockRepo: IssueRepository = {
     findAll: vi.fn(async () => []),
@@ -64,6 +64,39 @@ describe("Issue Service Factory", () => {
             expect(result).toBeUndefined()
             expect(mockRepo.findById).toHaveBeenCalledWith("invalid-something")
             expect(mockRepo.findById).toHaveBeenCalledOnce()
+        })
+    })
+
+    describe("createIssue", () => {
+        it("should return the issue after created", async () => {
+            const service = createIssueService(mockRepo)
+            const issue: Issue = {
+                id: "issue-1",
+                title: "Learning Typescript",
+                description: "Learning Typescript is not that hard tbh",
+                status: "todo",
+                createdAt: new Date()
+            }
+            const input: CreateIssueInput = {
+                title: "Learning Typescript",
+                description: "Learning Typescript is not that hard tbh"
+            };
+            vi.mocked(mockRepo.insert).mockResolvedValueOnce(issue)
+            const result = await service.createIssue(input)
+            expect(result).toEqual(issue)
+            expect(mockRepo.insert).toHaveBeenCalledOnce()
+            expect(mockRepo.insert).toHaveBeenCalledWith(input)
+        })
+
+        it("should propagate error when repository fails", async () => {
+            const service = createIssueService(mockRepo)
+            const input: CreateIssueInput = {
+                title: "Learning Typescript"
+            }
+            vi.mocked(mockRepo.insert).mockRejectedValueOnce(new Error("Database error"))
+            await expect(service.createIssue(input)).rejects.toThrow("Database error")
+            expect(mockRepo.insert).toHaveBeenCalledOnce()
+            expect(mockRepo.insert).toHaveBeenCalledWith(input)
         })
     })
 })
