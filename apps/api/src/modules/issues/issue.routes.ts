@@ -1,7 +1,6 @@
 import { Router } from "express";
 import { createIssueService } from "./issue.service.factory.js";
 import { postgresIssueRepository } from "./issue.postgres.repository.js";
-import { createIssue, listIssues, getIssueById, updateIssue, deleteIssue } from "./issue.service.js";
 import { createIssueSchema, updateIssueSchema } from "./issue.schema.js";
 import { issueIdSchema } from "./issue.schema.js";
 
