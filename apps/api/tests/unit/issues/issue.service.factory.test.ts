@@ -41,5 +41,29 @@ describe("Issue Service Factory", () => {
             expect(mockRepo.findAll).toHaveBeenCalledOnce()
         })
     })
-
+    describe("getIssueById", () => {
+        it("should return an issue matching the ID", async () => {
+            const service = createIssueService(mockRepo)
+            const issue: Issue = {
+                id: "issue-1",
+                title: "Learning Typescript",
+                description: "Learning Typescript is not that hard tbh",
+                status: "todo",
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findById).mockResolvedValueOnce(issue)
+            const result = await service.getIssueById(issue.id)
+            expect(result).toEqual(issue)
+            expect(mockRepo.findById).toHaveBeenCalledOnce()
+            expect(mockRepo.findById).toHaveBeenCalledWith(issue.id)
+        })
+        it("should return undefined if the issue does not exist", async () => {
+            const service = createIssueService(mockRepo)
+            vi.mocked(mockRepo.findById).mockResolvedValueOnce(undefined)
+            const result = await service.getIssueById("invalid-something")
+            expect(result).toBeUndefined()
+            expect(mockRepo.findById).toHaveBeenCalledWith("invalid-something")
+            expect(mockRepo.findById).toHaveBeenCalledOnce()
+        })
+    })
 })
