@@ -6,6 +6,7 @@ import type { Issue, UpdateIssueInput, CreateIssueInput } from "../../src/module
 import { beforeEach } from "node:test";
 import { response } from "express";
 import { id } from "zod/v4/locales";
+import { Update } from "drizzle-orm";
 
 vi.mock("../../src/modules/issues/issue.postgres.repository.js", () => ({
     postgresIssueRepository: {
@@ -203,6 +204,28 @@ describe("Issue API", () => {
             expect(response.status).toBe(400)
             expect(response.body.message).toBe("Validation failed")
             expect(postgresIssueRepository.update).not.toHaveBeenCalled()
+        })
+
+        it("should return HTTP 400 when body is empty", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            const input = {}
+            const response = await request(app).patch(`/issues/${id}`).send(input)
+            expect(response.status).toBe(400)
+            expect(response.body.message).toBe("Validation failed")
+            expect(postgresIssueRepository.update).not.toHaveBeenCalled()
+        })
+
+        it("should return HTTP 500 when repository fails", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            const input: UpdateIssueInput = {
+                status: "done"
+            }
+            vi.mocked(postgresIssueRepository.update).mockRejectedValueOnce(new Error("Database error"))
+            const response = await request(app).patch(`/issues/${id}`).send(input)
+            expect(response.status).toBe(500)
+            expect(response.body.message).toBe("Internal Server Error")
+            expect(postgresIssueRepository.update).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.update).toHaveBeenCalledWith(id, input)
         })
     })
 })
