@@ -228,4 +228,44 @@ describe("Issue API", () => {
             expect(postgresIssueRepository.update).toHaveBeenCalledWith(id, input)
         })
     })
+
+    describe("DELETE /issues/:id", () => {
+        it("should delete an existing issue and return 204", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            vi.mocked(postgresIssueRepository.delete).mockResolvedValueOnce(true)
+            const response = await request(app).delete(`/issues/${id}`)
+            expect(response.status).toBe(204)
+            expect(response.text).toBe("")
+            expect(postgresIssueRepository.delete).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.delete).toHaveBeenCalledWith(id)
+        })
+
+        it("should return HTTP 404 when issue does not exist", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            vi.mocked(postgresIssueRepository.delete).mockResolvedValueOnce(false)
+            const response = await request(app).delete(`/issues/${id}`)
+            expect(response.status).toBe(404)
+            expect(response.body.message).toBe("Issue not found")
+            expect(postgresIssueRepository.delete).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.delete).toHaveBeenCalledWith(id)
+        })
+
+        it("should return HTTP 400 when ID is invalid", async () => {
+            const id = "invalid-something"
+            const response = await request(app).delete(`/issues/${id}`)
+            expect(response.status).toBe(400)
+            expect(response.body.message).toBe("Validation failed")
+            expect(postgresIssueRepository.delete).not.toHaveBeenCalled()
+        })
+
+        it("should return HTTP 500 when repository fails", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            vi.mocked(postgresIssueRepository.delete).mockRejectedValueOnce(new Error("Database failed"))
+            const response = await request(app).delete(`/issues/${id}`)
+            expect(response.status).toBe(500)
+            expect(response.body.message).toBe("Internal Server Error")
+            expect(postgresIssueRepository.delete).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.delete).toHaveBeenCalledWith(id)
+        })
+    })
 })
