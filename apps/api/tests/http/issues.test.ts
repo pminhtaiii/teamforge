@@ -193,5 +193,16 @@ describe("Issue API", () => {
             expect(response.body.message).toBe("Validation failed")
             expect(postgresIssueRepository.update).not.toHaveBeenCalled()
         })
+
+        it("should return HTTP 400 when status is invalid", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            const input = {
+                status: "invalid-something"
+            }
+            const response = await request(app).patch(`/issues/${id}`).send(input)
+            expect(response.status).toBe(400)
+            expect(response.body.message).toBe("Validation failed")
+            expect(postgresIssueRepository.update).not.toHaveBeenCalled()
+        })
     })
 })
