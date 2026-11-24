@@ -2,9 +2,10 @@ import { describe, it, expect, vi } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { postgresIssueRepository } from "../../src/modules/issues/issue.postgres.repository.js";
-import type { Issue } from "../../src/modules/issues/issue.types.js";
+import type { Issue, UpdateIssueInput, CreateIssueInput } from "../../src/modules/issues/issue.types.js";
 import { beforeEach } from "node:test";
 import { response } from "express";
+import { id } from "zod/v4/locales";
 
 vi.mock("../../src/modules/issues/issue.postgres.repository.js", () => ({
     postgresIssueRepository: {
@@ -140,6 +141,57 @@ describe("Issue API", () => {
             expect(response.body.message).toBe("Internal Server Error")
             expect(postgresIssueRepository.findById).toHaveBeenCalledOnce()
             expect(postgresIssueRepository.findById).toHaveBeenCalledWith(id)
+        })
+    })
+
+    describe("PATCH /issues/:id", () => {
+        it("should update an existing issue and return HTTP 200", async () => {
+            const issue: Issue = {
+                id: "550e8400-e29b-41d4-a716-446655440000",
+                title: "Learning TypeScript",
+                description: null,
+                status: "todo",
+                createdAt: new Date()
+            };
+            const input: UpdateIssueInput = {
+                status: "in_progress"
+            }
+            const updatedIssue: Issue = {
+                ...issue,
+                status: "in_progress"
+            }
+            vi.mocked(postgresIssueRepository.update).mockResolvedValueOnce(updatedIssue)
+            const response = await request(app).patch(`/issues/${issue.id}`).send(input)
+            expect(response.status).toBe(200)
+            expect(response.body.id).toBe(issue.id)
+            expect(response.body.status).toBe("in_progress")
+            expect(response.body.title).toBe(issue.title)
+            expect(postgresIssueRepository.update).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.update).toHaveBeenCalledWith(issue.id, input)
+        })
+
+        it("should return HTTP 404 when issue does not exist", async () => {
+            const id = "550e8400-e29b-41d4-a716-446655440000"
+            const input: UpdateIssueInput = {
+                status: "done"
+            }
+            vi.mocked(postgresIssueRepository.update).mockResolvedValueOnce(undefined)
+            const response = await request(app).patch(`/issues/${id}`).send(input)
+            expect(response.status).toBe(404)
+            expect(response.body.message).toBe("Issue not found")
+            expect(postgresIssueRepository.update).toHaveBeenCalledOnce()
+            expect(postgresIssueRepository.update).toHaveBeenCalledWith(id, input)
+        })
+
+        it("should return HTTP 400 when ID is invalid", async () => {
+            const id = "invalid-something"
+            const input: UpdateIssueInput = {
+                status: "done"
+            }
+            const response = await request(app).patch(`/issues/${id}`).send(input)
+            expect(response.status).toBe(400)
+            expect(response.body.message).toBe("Validation failed")
+            expect(postgresIssueRepository.update).not.toHaveBeenCalled()
         })
     })
 })
