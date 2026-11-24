@@ -39,10 +39,7 @@ issueRouter.post("/", async (req, res) => {
         })
     }
     const issue = await issueService.createIssue(parsed.data)
-    return res.status(201).json({
-        message: "Issue created",
-        issue: issue
-    })
+    return res.status(201).json(issue)
 })
 
 issueRouter.patch("/:id", async (req, res) => {

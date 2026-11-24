@@ -1,12 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import { postgresIssueRepository } from "../../src/modules/issues/issue.postgres.repository.js";
-import type { Issue, UpdateIssueInput, CreateIssueInput } from "../../src/modules/issues/issue.types.js";
-import { beforeEach } from "node:test";
-import { response } from "express";
-import { id } from "zod/v4/locales";
-import { Update } from "drizzle-orm";
+import type { Issue, UpdateIssueInput } from "../../src/modules/issues/issue.types.js";
 
 vi.mock("../../src/modules/issues/issue.postgres.repository.js", () => ({
     postgresIssueRepository: {
@@ -28,6 +24,7 @@ describe("Issue API", () => {
             const response = await request(app).post("/issues").send({ title: "" })
             expect(response.status).toBe(400)
             expect(response.body.message).toBe("Validation failed")
+            expect(postgresIssueRepository.insert).not.toHaveBeenCalled()
         })
 
         it("should return HTTP 201 when issue is created", async () => {
@@ -38,7 +35,7 @@ describe("Issue API", () => {
                 status: "todo",
                 createdAt: new Date()
             };
-            const input = { title: "Learning Typescript" }
+            const input = { title: issue.title }
             vi.mocked(postgresIssueRepository.insert).mockResolvedValueOnce(issue)
             const response = await request(app).post("/issues").send(input)
             expect(response.status).toBe(201)
