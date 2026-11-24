@@ -8,6 +8,13 @@
       "when": 1795277479808,
       "tag": "0000_good_sleepwalker",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1795528623114,
+      "tag": "0001_chief_thunderball",
+      "breakpoints": true
     }
   ]
 }
