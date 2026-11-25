@@ -1,7 +1,6 @@
 import type { UserRepository } from "../users/user.repository.interface.js";
 import type { RegisterInput, PublicUser } from "../users/user.types.js";
 import { hashPassword } from "../../utils/password.js";
-import { randomUUID } from "node:crypto";
 import { AppError } from "../../utils/app-error.js";
 import { isDuplicateEmailError } from "../../utils/db-error.js";
 
