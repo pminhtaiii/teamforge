@@ -3,6 +3,7 @@ import { createAuthService } from "../../../src/modules/auth/auth.service.factor
 import type { UserRepository } from "../../../src/modules/users/user.repository.interface.js";
 import type { User } from "../../../src/modules/users/user.types.js";
 import { AppError } from "../../../src/utils/app-error.js";
+import { hashPassword, verifyPassword } from "../../../src/utils/password.js";
 
 const mockRepo: UserRepository = {
     findById: vi.fn(),
@@ -56,11 +57,33 @@ describe("Auth Service", () => {
             }
             vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(undefined)
             vi.mocked(mockRepo.insert).mockResolvedValueOnce(mockUser)
-            const result = await authService.register(input)
+            await authService.register(input)
             expect(mockRepo.findByEmail).toHaveBeenCalledWith("test@example.com")
             expect(mockRepo.insert).toHaveBeenCalledWith(
                 expect.objectContaining({ email: "test@example.com" })
             )
+        })
+
+        it("should hash password before inserting user", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: input.name,
+                email: "test@example.com",
+                passwordHash: "fake-hash",
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(undefined)
+            vi.mocked(mockRepo.insert).mockResolvedValueOnce(mockUser)
+            await authService.register(input)
+            expect(mockRepo.insert).toHaveBeenCalledTimes(1)
+            const insertedInput = vi.mocked(mockRepo.insert).mock.calls[0][0]
+            expect(insertedInput.passwordHash).not.toBe(input.password)
+            expect(await verifyPassword(input.password, insertedInput.passwordHash)).resolves.toBe(true)
         })
     })
 })
