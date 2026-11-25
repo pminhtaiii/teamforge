@@ -83,7 +83,7 @@ describe("Auth Service", () => {
             expect(mockRepo.insert).toHaveBeenCalledTimes(1)
             const insertedInput = vi.mocked(mockRepo.insert).mock.calls[0][0]
             expect(insertedInput.passwordHash).not.toBe(input.password)
-            expect(await verifyPassword(input.password, insertedInput.passwordHash)).resolves.toBe(true)
+            expect(await verifyPassword(input.password, insertedInput.passwordHash)).toBe(true)
         })
 
         it("should reject registration when email already exists", async () => {
@@ -125,6 +125,19 @@ describe("Auth Service", () => {
                 message: "Email already exists",
                 statusCode: 409
             })
+            expect(mockRepo.insert).toHaveBeenCalledTimes(1)
+        })
+
+        it("should propagate unexpected database errors", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = new Error("Database connection failed")
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(undefined)
+            vi.mocked(mockRepo.insert).mockRejectedValueOnce(dbError)
+            await expect(authService.register(input)).rejects.toBe(dbError)
             expect(mockRepo.insert).toHaveBeenCalledTimes(1)
         })
     })

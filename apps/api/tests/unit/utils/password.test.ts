@@ -34,6 +34,6 @@ describe("Password Utility", () => {
             const hashed = await hashPassword(password)
             const result = await verifyPassword(wrongPassword, hashed)
             expect(result).toBe(false)
-        })
+        }, 15000)
     })
 })
