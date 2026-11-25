@@ -85,5 +85,47 @@ describe("Auth Service", () => {
             expect(insertedInput.passwordHash).not.toBe(input.password)
             expect(await verifyPassword(input.password, insertedInput.passwordHash)).resolves.toBe(true)
         })
+
+        it("should reject registration when email already exists", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: input.name,
+                email: "test@example.com",
+                passwordHash: "fake-hash",
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(mockUser)
+            await expect(authService.register(input)).rejects.toMatchObject({
+                message: "Email already exists",
+                statusCode: 409
+            })
+            expect(mockRepo.insert).not.toHaveBeenCalled()
+        })
+
+        it("should handle duplicate email race condition", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = {
+                cause: {
+                    code: "23505",
+                    constraint_name: "users_email_unique"
+                }
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(undefined)
+            vi.mocked(mockRepo.insert).mockRejectedValueOnce(dbError)
+            await expect(authService.register(input)).rejects.toMatchObject({
+                message: "Email already exists",
+                statusCode: 409
+            })
+            expect(mockRepo.insert).toHaveBeenCalledTimes(1)
+        })
     })
 })
