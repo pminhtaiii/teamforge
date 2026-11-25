@@ -46,4 +46,50 @@ describe("User Repository", () => {
             }
         })
     })
+
+    describe("findUserById", () => {
+        it("should return a user when ID exists", async () => {
+            const input: CreateUserInput = {
+                name: "Test user",
+                email: `test-${randomUUID()}@example.com`,
+                passwordHash: "fake-password-hash"
+            }
+            const user = await insertUser(input)
+            try {
+                const result = await findUserById(user.id)
+                expect(result).toEqual(user)
+            } finally {
+                await db.delete(users).where(eq(users.id, user.id))
+            }
+        })
+
+        it("should return undefined when ID does not exist", async () => {
+            const id = randomUUID()
+            const result = await findUserById(id)
+            expect(result).toBeUndefined()
+        })
+    })
+
+    describe("findUserByEmail", () => {
+        it("should return a user when email exists", async () => {
+            const input: CreateUserInput = {
+                name: "Test user",
+                email: `test-${randomUUID()}@example.com`,
+                passwordHash: "fake-password-hash"
+            }
+            const user = await insertUser(input)
+            try {
+                const result = await findUserByEmail(input.email)
+                expect(result).toEqual(user)
+            } finally {
+                await db.delete(users).where(eq(users.id, user.id))
+            }
+        })
+
+        it("should return undefined when email does not exist", async () => {
+            const email = `test-${randomUUID()}@example.com`
+            const result = await findUserByEmail(email)
+            expect(result).toBeUndefined()
+        })
+    })
 })
