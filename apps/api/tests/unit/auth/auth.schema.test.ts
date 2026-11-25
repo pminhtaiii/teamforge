@@ -77,4 +77,19 @@ describe("Register Schema", () => {
             expect(result.success).toBe(false)
         })
     })
+
+    it("should trim name and email", () => {
+        const input = {
+            name: "Test User",
+            email: "test@example.com",
+            password: "testing123"
+        }
+        const result = registerSchema.safeParse(input)
+        expect(result.success).toBe(true)
+        if (result.success) {
+            expect(result.data.name).toBe("Test User")
+            expect(result.data.email).toBe("test@example.com")
+            expect(result.data.password).toBe(input.password)
+        }
+    })
 })
