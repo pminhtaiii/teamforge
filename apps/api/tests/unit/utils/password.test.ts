@@ -19,4 +19,21 @@ describe("Password Utility", () => {
             expect(hashed1).not.toBe(hashed2)
         })
     })
+
+    describe("verifyPassword", () => {
+        it("should return true when password is correct", async () => {
+            const password = "testing123"
+            const hashed = await hashPassword(password)
+            const result = await verifyPassword(password, hashed)
+            expect(result).toBe(true)
+        })
+
+        it("should return false when password is incorrect", async () => {
+            const password = "testing123"
+            const wrongPassword = "wrong123"
+            const hashed = await hashPassword(password)
+            const result = await verifyPassword(wrongPassword, hashed)
+            expect(result).toBe(false)
+        })
+    })
 })
