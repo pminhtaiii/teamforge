@@ -23,4 +23,9 @@ export interface LoginInput {
     password: string;
 }
 
+export interface LoginResult {
+    user: PublicUser;
+    accessToken: string;
+}
+
 export type PublicUser = Omit<User, "passwordHash">
