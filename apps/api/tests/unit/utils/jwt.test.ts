@@ -23,4 +23,28 @@ describe("JWT Utility", () => {
         const result = verifyAccessToken(accessToken)
         expect(result).toBe(userId)
     })
+
+    it("should reject an invalid access token", () => {
+        const invalidToken = "invalid-token"
+        expect(() => verifyAccessToken(invalidToken)).toThrow("jwt malformed")
+    })
+
+    it("should reject a tampered access token", () => {
+        const token = generateAccessToken("user-123")
+        const parts = token.split(".")
+        parts[1] = Buffer.from(JSON.stringify({ sub: "admin-456" })).toString("base64url")
+        const tamperedToken = parts.join(".")
+        expect(() => verifyAccessToken(tamperedToken)).toThrow("invalid signature")
+    })
+
+    it("should reject an expired access token", () => {
+        vi.useFakeTimers()
+        try {
+            const token = generateAccessToken("user-123")
+            vi.advanceTimersByTime(2 * 60 * 60 * 1000)
+            expect(() => verifyAccessToken(token)).toThrow("jwt expired")
+        } finally {
+            vi.useRealTimers()
+        }
+    })
 })
