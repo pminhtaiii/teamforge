@@ -47,4 +47,10 @@ describe("JWT Utility", () => {
             vi.useRealTimers()
         }
     })
+    it("should reject a token signed with a different secret", () => {
+        const userId = "user-123"
+        const token = generateAccessToken(userId)
+        vi.stubEnv("JWT_SECRET", "another-test-secret")
+        expect(() => verifyAccessToken(token)).toThrow("invalid signature")
+    })
 })
