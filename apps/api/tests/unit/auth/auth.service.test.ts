@@ -198,5 +198,52 @@ describe("Auth Service", () => {
                 statusCode: 401
             })
         })
+
+        it("should reject login when password is incorrect", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "wrongPassword"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: input.email,
+                passwordHash: await hashPassword("testing123"),
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(mockUser)
+            await expect(authService.login(input)).rejects.toMatchObject({
+                message: "Invalid email or password",
+                statusCode: 401
+            })
+        })
+
+        it("should return an access token containing the correct user ID", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: input.email,
+                passwordHash: await hashPassword(input.password),
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(mockUser)
+            const result = await authService.login(input)
+            expect(verifyAccessToken(result.accessToken)).toBe(mockUser.id)
+        })
+
+        it("should propagate unexpected database errors during login", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = new Error("Database connection failed")
+            vi.mocked(mockRepo.findByEmail).mockRejectedValueOnce(dbError)
+            await expect(authService.login(input)).rejects.toBe(dbError)
+            expect(mockRepo.findByEmail).toHaveBeenCalledTimes(1)
+        })
     })
 })
