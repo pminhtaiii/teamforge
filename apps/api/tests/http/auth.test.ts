@@ -44,5 +44,38 @@ describe("Auth API", () => {
             expect(response.body.createdAt).toBe(mockUser.createdAt)
             expect(response.body).not.toHaveProperty("passwordHash")
         })
+
+        it("should return 400 when registration input is invalid", async () => {
+            const input = {
+                name: "",
+                email: "invalid-email",
+                password: "123"
+            }
+            const result = await request(app).post("/auth/register").send(input)
+            expect(result.status).toBe(400)
+            expect(result.body.message).toBe("Validation failed")
+            expect(postgresUserRepository.findByEmail).not.toHaveBeenCalled()
+            expect(postgresUserRepository.insert).not.toHaveBeenCalled()
+        })
+
+        it("should return 409 when email already exists", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: input.name,
+                email: input.email,
+                passwordHash: "fake-hash",
+                createdAt: new Date()
+            }
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(mockUser)
+            const response = await request(app).post("/auth/register").send(input)
+            expect(response.status).toBe(409)
+            expect(response.body.message).toBe("Email already exists")
+            expect(postgresUserRepository.insert).not.toHaveBeenCalled()
+        })
     })
 })
