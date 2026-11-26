@@ -41,7 +41,7 @@ describe("Auth API", () => {
             expect(response.body.name).toBe(mockUser.name)
             expect(response.body.email).toBe(mockUser.email)
             expect(response.body.id).toBe(mockUser.id)
-            expect(response.body.createdAt).toBe(mockUser.createdAt)
+            expect(response.body.createdAt).toBe(mockUser.createdAt.toISOString())
             expect(response.body).not.toHaveProperty("passwordHash")
         })
 
@@ -76,6 +76,41 @@ describe("Auth API", () => {
             expect(response.status).toBe(409)
             expect(response.body.message).toBe("Email already exists")
             expect(postgresUserRepository.insert).not.toHaveBeenCalled()
+        })
+
+        it("should return 409 when duplicate email race condition occurs", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = {
+                cause: {
+                    code: "23505",
+                    constraint_name: "users_email_unique"
+                }
+            }
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(undefined)
+            vi.mocked(postgresUserRepository.insert).mockRejectedValueOnce(dbError)
+            const response = await request(app).post("/auth/register").send(input)
+            expect(response.status).toBe(409)
+            expect(response.body.message).toBe("Email already exists")
+            expect(postgresUserRepository.insert).toHaveBeenCalledTimes(1)
+        })
+
+        it("should return 500 when an unexpected database error occurs", async () => {
+            const input = {
+                name: "Test User",
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = new Error("Database connection failed")
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(undefined)
+            vi.mocked(postgresUserRepository.insert).mockRejectedValueOnce(dbError)
+            const response = await request(app).post("/auth/register").send(input)
+            expect(response.status).toBe(500)
+            expect(response.body.message).toBe("Internal Server Error")
+            expect(postgresUserRepository.insert).toHaveBeenCalledTimes(1)
         })
     })
 })
