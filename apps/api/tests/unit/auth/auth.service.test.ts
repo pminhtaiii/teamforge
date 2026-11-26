@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createAuthService } from "../../../src/modules/auth/auth.service.factory.js";
 import type { UserRepository } from "../../../src/modules/users/user.repository.interface.js";
 import type { User } from "../../../src/modules/users/user.types.js";
-import { AppError } from "../../../src/utils/app-error.js";
 import { hashPassword, verifyPassword } from "../../../src/utils/password.js";
+import { verifyAccessToken } from "../../../src/utils/jwt.js";
 
 const mockRepo: UserRepository = {
     findById: vi.fn(),
@@ -15,6 +15,11 @@ const authService = createAuthService(mockRepo)
 
 beforeEach(() => {
     vi.resetAllMocks()
+    vi.stubEnv("JWT_SECRET", "test-secret-key-for-unit-testing-only")
+})
+
+afterEach(() => {
+    vi.unstubAllEnvs()
 })
 
 describe("Auth Service", () => {
@@ -139,6 +144,59 @@ describe("Auth Service", () => {
             vi.mocked(mockRepo.insert).mockRejectedValueOnce(dbError)
             await expect(authService.register(input)).rejects.toBe(dbError)
             expect(mockRepo.insert).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe("login", () => {
+        it("should login successfully with valid credentials", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: input.email,
+                passwordHash: await hashPassword(input.password),
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(mockUser)
+            const result = await authService.login(input)
+            expect(result.user.id).toBe(mockUser.id)
+            expect(result.user.name).toBe(mockUser.name)
+            expect(result.user.email).toBe(mockUser.email)
+            expect(result.user.createdAt).toEqual(mockUser.createdAt)
+            expect(result.user).not.toHaveProperty("passwordHash")
+            expect(typeof result.accessToken).toBe("string")
+        })
+
+        it("should normalize email before logging in", async () => {
+            const input = {
+                email: "  TEST@Example.COM  ",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: "test@example.com",
+                passwordHash: await hashPassword(input.password),
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(mockUser)
+            await authService.login(input)
+            expect(mockRepo.findByEmail).toHaveBeenCalledWith("test@example.com")
+        })
+
+        it("should reject login when email does not exist", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            vi.mocked(mockRepo.findByEmail).mockResolvedValueOnce(undefined)
+            await expect(authService.login(input)).rejects.toMatchObject({
+                message: "Invalid email or password",
+                statusCode: 401
+            })
         })
     })
 })
