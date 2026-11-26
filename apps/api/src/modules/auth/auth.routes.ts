@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { registerSchema } from "./auth.schema.js";
+import { registerSchema, loginSchema } from "./auth.schema.js";
 import { createAuthService } from "./auth.service.factory.js";
 import { postgresUserRepository } from "../users/user.postgres.repository.js";
 
@@ -16,4 +16,16 @@ authRouter.post("/register", async (req, res) => {
     }
     const user = await authService.register(parsed.data)
     return res.status(201).json(user)
+})
+
+authRouter.post("/login", async (req, res) => {
+    const parsed = loginSchema.safeParse(req.body)
+    if (!parsed.success) {
+        return res.status(400).json({
+            message: "Validation failed",
+            errors: parsed.error.issues
+        })
+    }
+    const user = await authService.login(parsed.data)
+    return res.status(200).json(user)
 })

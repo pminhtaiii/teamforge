@@ -1,8 +1,10 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import request from "supertest";
 import { app } from "../../src/app.js";
 import type { User } from "../../src/modules/users/user.types.js";
 import { postgresUserRepository } from "../../src/modules/users/user.postgres.repository.js";
+import { hashPassword } from "../../src/utils/password.js";
+import { verifyAccessToken } from "../../src/utils/jwt.js";
 
 vi.mock(
     "../../src/modules/users/user.postgres.repository.js",
@@ -17,6 +19,11 @@ vi.mock(
 
 beforeEach(() => {
     vi.resetAllMocks()
+    vi.stubEnv("JWT_SECRET", "test-secret-key-for-unit-testing-only")
+})
+
+afterEach(() => {
+    vi.unstubAllEnvs()
 })
 
 describe("Auth API", () => {
@@ -111,6 +118,86 @@ describe("Auth API", () => {
             expect(response.status).toBe(500)
             expect(response.body.message).toBe("Internal Server Error")
             expect(postgresUserRepository.insert).toHaveBeenCalledTimes(1)
+        })
+    })
+
+    describe("POST /auth/login", () => {
+        it("should login successfully with valid credentials", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: input.email,
+                passwordHash: await hashPassword(input.password),
+                createdAt: new Date()
+            }
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(mockUser)
+            const response = await request(app).post("/auth/login").send(input)
+            expect(response.status).toBe(200)
+            expect(response.body.user.id).toBe(mockUser.id)
+            expect(response.body.user.name).toBe(mockUser.name)
+            expect(response.body.user.email).toBe(mockUser.email)
+            expect(response.body.user.createdAt).toEqual(mockUser.createdAt.toISOString())
+            expect(response.body.user).not.toHaveProperty("passwordHash")
+            expect(verifyAccessToken(response.body.accessToken)).toBe(mockUser.id)
+        })
+
+        it("should return 400 when login input is invalid", async () => {
+            const input = {
+                email: "invalid-email",
+                password: ""
+            }
+            const response = await request(app).post("/auth/login").send(input)
+            expect(response.status).toBe(400)
+            expect(response.body.message).toBe("Validation failed")
+            expect(postgresUserRepository.findByEmail).not.toHaveBeenCalled()
+        })
+
+        it("should return 401 when email does not exist", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(undefined)
+            const response = await request(app).post("/auth/login").send(input)
+            expect(response.status).toBe(401)
+            expect(response.body.message).toBe("Invalid email or password")
+            expect(postgresUserRepository.findByEmail).toHaveBeenCalledTimes(1)
+        })
+
+        it("should return 401 when password is incorrect", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "wrongPassword"
+            }
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: input.email,
+                passwordHash: await hashPassword("testing123"),
+                createdAt: new Date()
+            }
+            vi.mocked(postgresUserRepository.findByEmail).mockResolvedValueOnce(mockUser)
+            const response = await request(app).post("/auth/login").send(input)
+            expect(response.status).toBe(401)
+            expect(response.body.message).toBe("Invalid email or password")
+            expect(response.body).not.toHaveProperty("accessToken")
+        })
+
+        it("should return 500 when database error occurs during login", async () => {
+            const input = {
+                email: "test@example.com",
+                password: "testing123"
+            }
+            const dbError = new Error("Database connection failed")
+            vi.mocked(postgresUserRepository.findByEmail).mockRejectedValueOnce(dbError)
+            const response = await request(app).post("/auth/login").send(input)
+            expect(response.status).toBe(500)
+            expect(response.body.message).toBe("Internal Server Error")
+            expect(response.body).not.toHaveProperty("accessToken")
         })
     })
 })
