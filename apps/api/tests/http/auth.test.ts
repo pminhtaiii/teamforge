@@ -4,7 +4,8 @@ import { app } from "../../src/app.js";
 import type { User } from "../../src/modules/users/user.types.js";
 import { postgresUserRepository } from "../../src/modules/users/user.postgres.repository.js";
 import { hashPassword } from "../../src/utils/password.js";
-import { verifyAccessToken } from "../../src/utils/jwt.js";
+import { generateAccessToken, verifyAccessToken } from "../../src/utils/jwt.js";
+import jwt from "jsonwebtoken";
 
 vi.mock(
     "../../src/modules/users/user.postgres.repository.js",
@@ -199,5 +200,80 @@ describe("Auth API", () => {
             expect(response.body.message).toBe("Internal Server Error")
             expect(response.body).not.toHaveProperty("accessToken")
         })
+    })
+})
+
+describe("GET /auth/me", () => {
+    it("should return current user with valid access token", async () => {
+        const mockUser: User = {
+            id: "user-1",
+            name: "Test User",
+            email: "test@example.com",
+            passwordHash: "fake-password-hash",
+            createdAt: new Date()
+        }
+        const token = generateAccessToken(mockUser.id)
+        vi.mocked(postgresUserRepository.findById).mockResolvedValueOnce(mockUser)
+        const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`)
+        expect(response.status).toBe(200)
+        expect(response.body.id).toBe(mockUser.id)
+        expect(response.body.name).toBe(mockUser.name)
+        expect(response.body.email).toBe(mockUser.email)
+        expect(response.body.createdAt).toEqual(mockUser.createdAt.toISOString())
+        expect(response.body).not.toHaveProperty("passwordHash")
+        expect(postgresUserRepository.findById).toHaveBeenCalledWith(mockUser.id)
+    })
+
+    it("should return 401 when authorization header is missing", async () => {
+        const response = await request(app).get("/auth/me")
+        expect(response.status).toBe(401)
+        expect(response.body.message).toBe("Authorization header is missing")
+        expect(postgresUserRepository.findById).not.toHaveBeenCalled()
+    })
+
+    it("should return 401 when access token is invalid", async () => {
+        const token = "invalid-token"
+        const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`)
+        expect(response.status).toBe(401)
+        expect(response.body.message).toBe("Invalid or expired access token")
+        expect(postgresUserRepository.findById).not.toHaveBeenCalled()
+    })
+
+    it("should return 401 when access token is expired", async () => {
+        const token = jwt.sign(
+            { sub: "user-1" },
+            process.env.JWT_SECRET!,
+            {
+                algorithm: "HS256",
+                expiresIn: -1
+            }
+        )
+        const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`)
+        expect(response.status).toBe(401)
+        expect(response.body.message).toBe("Invalid or expired access token")
+        expect(postgresUserRepository.findById).not.toHaveBeenCalled()
+    })
+
+    it("should return 401 when current user no longer exists", async () => {
+        const userId = "user-1"
+        const token = generateAccessToken(userId)
+        vi.mocked(postgresUserRepository.findById).mockResolvedValueOnce(undefined)
+        const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`)
+        expect(response.status).toBe(401)
+        expect(response.body.message).toBe("User no longer exists")
+        expect(postgresUserRepository.findById).toHaveBeenCalledWith(userId)
+        expect(postgresUserRepository.findById).toHaveBeenCalledOnce()
+    })
+
+    it("should return 500 when database error occurs", async () => {
+        const userId = "user-1"
+        const token = generateAccessToken(userId)
+        const dbError = new Error("Database connection failed")
+        vi.mocked(postgresUserRepository.findById).mockRejectedValueOnce(dbError)
+        const response = await request(app).get("/auth/me").set("Authorization", `Bearer ${token}`)
+        expect(response.status).toBe(500)
+        expect(response.body.message).toBe("Internal Server Error")
+        expect(postgresUserRepository.findById).toHaveBeenCalledWith(userId)
+        expect(postgresUserRepository.findById).toHaveBeenCalledOnce()
     })
 })
