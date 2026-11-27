@@ -246,4 +246,44 @@ describe("Auth Service", () => {
             expect(mockRepo.findByEmail).toHaveBeenCalledTimes(1)
         })
     })
+
+    describe("getCurrentUser", () => {
+        it("should return public user when user exists", async () => {
+            const mockUser: User = {
+                id: "user-1",
+                name: "Test User",
+                email: "test@example.com",
+                passwordHash: "fake-password-hash",
+                createdAt: new Date()
+            }
+            vi.mocked(mockRepo.findById).mockResolvedValueOnce(mockUser)
+            const result = await authService.getCurrentUser(mockUser.id)
+            expect(result.id).toBe(mockUser.id)
+            expect(result.name).toBe(mockUser.name)
+            expect(result.email).toBe(mockUser.email)
+            expect(result.createdAt).toEqual(mockUser.createdAt)
+            expect(result).not.toHaveProperty("passwordHash")
+            expect(mockRepo.findById).toHaveBeenCalledWith(mockUser.id)
+        })
+
+        it("should reject when current user does not exist", async () => {
+            const userId = "user-1"
+            vi.mocked(mockRepo.findById).mockResolvedValueOnce(undefined)
+            await expect(authService.getCurrentUser(userId)).rejects.toMatchObject({
+                message: "User no longer exists",
+                statusCode: 401
+            })
+            expect(mockRepo.findById).toHaveBeenCalledWith(userId)
+            expect(mockRepo.findById).toHaveBeenCalledOnce()
+        })
+
+        it("should propagate unexpected database errors", async () => {
+            const userId = "user-1"
+            const dbError = new Error("Database connection failed")
+            vi.mocked(mockRepo.findById).mockRejectedValueOnce(dbError)
+            await expect(authService.getCurrentUser(userId)).rejects.toBe(dbError)
+            expect(mockRepo.findById).toHaveBeenCalledWith(userId)
+            expect(mockRepo.findById).toHaveBeenCalledOnce()
+        })
+    })
 })

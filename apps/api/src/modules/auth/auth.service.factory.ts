@@ -55,6 +55,19 @@ export function createAuthService(repo: UserRepository) {
                 },
                 accessToken: token
             }
-        }
+        },
+
+        async getCurrentUser(userId: string): Promise<PublicUser> {
+            const user = await repo.findById(userId)
+            if (user === undefined) {
+                throw new AppError("User no longer exists", 401)
+            }
+            return {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                createdAt: user.createdAt
+            }
+        },
     }
 }
