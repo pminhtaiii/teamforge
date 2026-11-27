@@ -8,7 +8,7 @@ export const requireAuth: RequestHandler = (req, res, next) => {
     if (!authorization) {
         throw new AppError("Authorization header is missing", 401)
     }
-    if (!authorization.startsWith("Bearer ")) {
+    if (!authorization.toLowerCase().startsWith("bearer ")) {
         throw new AppError("Invalid authorization format", 401)
     }
     const token = authorization.slice(7).trim()
