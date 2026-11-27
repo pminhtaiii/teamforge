@@ -102,4 +102,17 @@ describe("Authentication Middleware", () => {
         expect(next).not.toHaveBeenCalled()
         expect(req.userId).toBeUndefined()
     })
+    
+    it.each(["Bearer", "bearer", "BEARER", "bEaReR"])(
+        "should accept %s authorization scheme",
+        (scheme) => {
+            const userId = "user-1"
+            const token = generateAccessToken(userId)
+            req.headers.authorization = `${scheme} ${token}`
+            requireAuth(req, res, next)
+            expect(req.userId).toBe(userId)
+            expect(next).toHaveBeenCalledTimes(1)
+            expect(next).toHaveBeenCalledWith()
+        }
+    )
 })
