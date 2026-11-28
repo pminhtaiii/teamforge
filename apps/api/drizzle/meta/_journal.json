@@ -15,6 +15,13 @@
       "when": 1795528623114,
       "tag": "0001_chief_thunderball",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795840482487,
+      "tag": "0002_early_warpath",
+      "breakpoints": true
     }
   ]
 }

@@ -1,4 +1,4 @@
-import { pgTable, pgEnum, uuid, varchar, text, timestamp } from "drizzle-orm/pg-core"
+import { pgTable, pgEnum, uuid, varchar, text, timestamp, primaryKey } from "drizzle-orm/pg-core"
 
 export const issueStatusEnum = pgEnum("issue_status", [
     "todo",
@@ -39,4 +39,8 @@ export const workspaceMembers = pgTable("workspace_members", {
     workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
     role: workspaceRoleEnum("role").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull()
-})
+}, (table) => [
+    primaryKey({
+        columns: [table.userId, table.workspaceId]
+    })
+])
