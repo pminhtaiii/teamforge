@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { db, client } from "../../../src/db/client.js";
 import { users, workspaces, workspaceMembers } from "../../../src/db/schema.js";
 import { postgresWorkspaceRepository } from "../../../src/modules/workspaces/workspace.postgres.repository.js";
-import { findMembership } from "../../../src/modules/workspaces/workspace.repository.js";
 
 afterAll(async () => {
     await client.end()
@@ -156,7 +155,54 @@ describe("Workspace Repository Integration", () => {
         }
     })
 
-    it("should reject duplicate workspace membership", async () => {
+    it("should reject membership when user does not exist", async () => {
+        const userId = randomUUID()
+        const workspaceId = randomUUID()
+        try {
+            await db.insert(workspaces).values({
+                id: workspaceId,
+                name: "Backend"
+            })
+            await expect(
+                db.insert(workspaceMembers).values({
+                    userId,
+                    workspaceId,
+                    role: "member"
+                })
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23503"
+                }
+            })
+        } finally {
+            await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
+        }
+    })
+
+    it("should reject membership when user does not exist", async () => {
+        const userId = randomUUID()
+        const workspaceId = randomUUID()
+        try {
+            await db.insert(workspaces).values([
+                { id: workspaceId, name: "Backend" }
+            ])
+            await expect(
+                db.insert(workspaceMembers).values({
+                    userId,
+                    workspaceId,
+                    role: "member"
+                })
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23503"
+                }
+            })
+        } finally {
+            await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
+        }
+    })
+
+    it("should reject membership when workspace does not exist", async () => {
         const userId = randomUUID()
         const workspaceId = randomUUID()
         try {
@@ -166,19 +212,61 @@ describe("Workspace Repository Integration", () => {
                 email: `${userId}@example.com`,
                 passwordHash: "fake-password-hash"
             })
-            await db.insert(workspaces).values([
-                { id: workspaceId, name: "Backend" }
-            ])
-            await db.insert(workspaceMembers).values([
-                {
+            await expect(
+                db.insert(workspaceMembers).values({
                     userId,
-                    workspaceId: workspaceId,
-                    role: "owner"
+                    workspaceId,
+                    role: "member"
+                })
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23503"
                 }
-            ])
+            })
         } finally {
-            await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
             await db.delete(users).where(eq(users.id, userId))
+        }
+    })
+
+    it("should cascade delete memberships when workspace is deleted", async () => {
+        const userId = randomUUID()
+        const workspaceId = randomUUID()
+        try {
+            await db.insert(users).values({
+                id: userId,
+                name: "Test User",
+                email: `${userId}@example.com`,
+                passwordHash: "fake-password-hash"
+            })
+            await db.insert(workspaces).values({
+                id: workspaceId,
+                name: "Backend"
+            })
+            await db.insert(workspaceMembers).values({
+                userId,
+                workspaceId,
+                role: "owner"
+            })
+            const membershipBefore =
+                await postgresWorkspaceRepository.findMembership(userId, workspaceId)
+            expect(membershipBefore).not.toBeUndefined()
+            expect(membershipBefore?.role).toBe("owner")
+            await db.delete(workspaces)
+                .where(eq(workspaces.id, workspaceId))
+            const workspace =
+                await postgresWorkspaceRepository.findById(workspaceId)
+            expect(workspace).toBeUndefined()
+            const membershipAfter =
+                await postgresWorkspaceRepository.findMembership(userId, workspaceId)
+            expect(membershipAfter).toBeUndefined()
+            const result = await db.select().from(users).where(eq(users.id, userId))
+            expect(result).toHaveLength(1)
+            expect(result[0]?.id).toBe(userId)
+        } finally {
+            await db.delete(workspaces)
+                .where(eq(workspaces.id, workspaceId))
+            await db.delete(users)
+                .where(eq(users.id, userId))
         }
     })
 })
