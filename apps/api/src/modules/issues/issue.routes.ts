@@ -3,8 +3,12 @@ import { createIssueService } from "./issue.service.js";
 import { postgresIssueRepository } from "./issue.postgres.repository.js";
 import { createIssueSchema, updateIssueSchema } from "./issue.schema.js";
 import { issueIdSchema } from "./issue.schema.js";
+import { requireAuth } from "../../middlewares/auth.middleware.js";
 
 export const issueRouter = Router()
+
+issueRouter.use(requireAuth)
+
 const issueService = createIssueService(postgresIssueRepository)
 
 issueRouter.get("/", async (_req, res) => {
