@@ -6,6 +6,12 @@ export const issueStatusEnum = pgEnum("issue_status", [
     "done"
 ])
 
+export const workspaceRoleEnum = pgEnum("workspace_role", [
+    "owner",
+    "admin",
+    "member"
+])
+
 export const issues = pgTable("issues", {
     id: uuid("id").primaryKey().defaultRandom(),
     title: varchar("title", { length: 255 }).notNull(),
@@ -19,5 +25,18 @@ export const users = pgTable("users", {
     name: varchar("name", { length: 100 }).notNull(),
     email: varchar("email", { length: 255 }).notNull().unique(),
     passwordHash: text("password_hash").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull()
+})
+
+export const workspaces = pgTable("workspaces", {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length:100 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull()
+})
+
+export const workspaceMembers = pgTable("workspace_members", {
+    userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    workspaceId: uuid("workspace_id").notNull().references(() => workspaces.id, { onDelete: "cascade" }),
+    role: workspaceRoleEnum("role").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true, mode: "date" }).defaultNow().notNull()
 })
