@@ -309,4 +309,52 @@ describe("Workspace Repository Integration", () => {
                 .where(eq(users.id, userId))
         }
     })
+
+    it("should create workspace with owner successfully", async () => {
+        const userId = randomUUID()
+        const workspaceName = `Backend-${randomUUID()}`
+        try {
+            await db.insert(users).values({
+                id: userId,
+                name: "Test User",
+                email: `${userId}@example.com`,
+                passwordHash: "fake-password-hash"
+            })
+            const workspace = await postgresWorkspaceRepository.createWithOwner({ name: workspaceName }, userId)
+            expect(workspace.name).toBe(workspaceName)
+            expect(typeof workspace.id).toBe("string")
+            expect(workspace.role).toBe("owner")
+            expect(workspace.createdAt).toBeInstanceOf(Date)
+            const savedWorkspace = await postgresWorkspaceRepository.findById(workspace.id)
+            expect(savedWorkspace).not.toBeUndefined()
+            expect(savedWorkspace?.id).toBe(workspace.id)
+            expect(savedWorkspace?.name).toBe(workspace.name)
+            const result = await postgresWorkspaceRepository.findMembership(userId, workspace.id)
+            expect(result).not.toBeUndefined()
+            expect(result?.userId).toBe(userId)
+            expect(result?.workspaceId).toBe(workspace.id)
+            expect(result?.role).toBe("owner")
+        } finally {
+            await db.delete(workspaces).where(eq(workspaces.name, workspaceName))
+            await db.delete(users).where(eq(users.id, userId))
+        }
+    })
+
+    it("should rollback workspace creation when owner does not exist", async () => {
+        const ownerId = randomUUID()
+        const workspaceName = `Rollback-${randomUUID()}`
+        try {
+            await expect(
+                postgresWorkspaceRepository.createWithOwner({ name: workspaceName }, ownerId)
+            ).rejects.toMatchObject({
+                cause: {
+                    code: "23503"
+                }
+            })
+            const result = await db.select().from(workspaces).where(eq(workspaces.name, workspaceName))
+            expect(result).toEqual([])
+        } finally {
+            await db.delete(workspaces).where(eq(workspaces.name, workspaceName))
+        }
+    })
 })
