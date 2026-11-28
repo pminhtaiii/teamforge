@@ -4,7 +4,7 @@ import { hashPassword, verifyPassword } from "../../utils/password.js";
 import { AppError } from "../../utils/app-error.js";
 import { generateAccessToken } from "../../utils/jwt.js";
 import { isDuplicateEmailError } from "../../utils/db-error.js";
-import { hash } from "node:crypto";
+import { toPublicUser } from "../users/user.mapper.js";
 
 export function createAuthService(repo: UserRepository) {
     return {
@@ -21,12 +21,7 @@ export function createAuthService(repo: UserRepository) {
                     email: email,
                     passwordHash: hashedPassword
                 })
-                return {
-                    id: user.id,
-                    name: user.name,
-                    email: user.email,
-                    createdAt: user.createdAt
-                }
+                return toPublicUser(user)
             } catch(error) {
                 if (isDuplicateEmailError(error)) {
                     throw new AppError("Email already exists", 409)
@@ -47,12 +42,7 @@ export function createAuthService(repo: UserRepository) {
             }
             const token = generateAccessToken(result.id)
             return {
-                user: {
-                    id: result.id,
-                    name: result.name,
-                    email: result.email,
-                    createdAt: result.createdAt
-                },
+                user: toPublicUser(result),
                 accessToken: token
             }
         },
@@ -62,12 +52,7 @@ export function createAuthService(repo: UserRepository) {
             if (user === undefined) {
                 throw new AppError("User no longer exists", 401)
             }
-            return {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                createdAt: user.createdAt
-            }
+            return toPublicUser(user)
         },
     }
 }
