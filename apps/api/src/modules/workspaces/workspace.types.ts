@@ -9,7 +9,7 @@ export interface Workspace {
 export interface WorkspaceMember {
     userId: string;
     workspaceId: string;
-    role: string;
+    role: WorkspaceRole;
     createdAt: Date;
 }
 
