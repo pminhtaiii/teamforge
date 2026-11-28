@@ -155,4 +155,30 @@ describe("Workspace Repository Integration", () => {
             await db.delete(users).where(eq(users.id, userId))
         }
     })
+
+    it("should reject duplicate workspace membership", async () => {
+        const userId = randomUUID()
+        const workspaceId = randomUUID()
+        try {
+            await db.insert(users).values({
+                id: userId,
+                name: "Test User",
+                email: `${userId}@example.com`,
+                passwordHash: "fake-password-hash"
+            })
+            await db.insert(workspaces).values([
+                { id: workspaceId, name: "Backend" }
+            ])
+            await db.insert(workspaceMembers).values([
+                {
+                    userId,
+                    workspaceId: workspaceId,
+                    role: "owner"
+                }
+            ])
+        } finally {
+            await db.delete(workspaces).where(eq(workspaces.id, workspaceId))
+            await db.delete(users).where(eq(users.id, userId))
+        }
+    })
 })
